@@ -3,9 +3,16 @@ package com.sujatha.docqa.service;
 import com.sujatha.docqa.storage.DocumentStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class QueryService {
@@ -15,6 +22,10 @@ public class QueryService {
 
     @Autowired
     private DocumentStorageService storageService;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final String ollamaUrl = "http://localhost:11434/api/generate";
+
 
     /**
      * Retrieve top N relevant chunks for a user question using cosine similarity.
@@ -51,6 +62,47 @@ public class QueryService {
         }
     }
 
+    // New method: call Ollama with context
+    public String answerQuestion(String question, int topN) {
+    List<String> contextChunks = getRelevantChunks(question, topN);
+
+    String prompt = "Answer the following question using the provided context.\n\n"
+            + String.join("\n", contextChunks)
+            + "\n\nQuestion: " + question;
+
+    Map<String, Object> request = Map.of(
+        "model", "gemma:2b",   // use the pulled model
+        "prompt", prompt,
+        "options", Map.of("num_predict", 200)
+    );
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+    // Use RestTemplate.exchange to stream the response
+    ResponseEntity<String> response =
+        restTemplate.postForEntity(ollamaUrl, entity, String.class);
+
+    // Ollama returns multiple JSON objects separated by newlines
+    String[] lines = response.getBody().split("\n");
+
+    StringBuilder answer = new StringBuilder();
+    for (String line : lines) {
+        try {
+            // Parse each line as JSON
+            Map<String, Object> obj = new ObjectMapper().readValue(line, Map.class);
+            if (obj.containsKey("response")) {
+                answer.append(obj.get("response"));
+            }
+        } catch (Exception e) {
+            // skip malformed lines
+        }
+    }
+
+    return answer.toString().trim();
+}
     /**
      * Cosine similarity helper function.
      */

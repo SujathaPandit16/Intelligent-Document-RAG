@@ -9,16 +9,14 @@ import java.util.Map;
 public class EmbeddingService {
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String ollamaUrl = "http://localhost:11434/v1/embeddings";
+    private final String ollamaEmbeddingUrl = "http://localhost:11434/api/embeddings"; // correct endpoint
     private final String model = "nomic-embed-text";
 
     public float[] generateEmbedding(String text) {
-
         try {
-            // Prepare request body
             Map<String, Object> request = Map.of(
-                    "model", model,
-                    "input", text
+                "model", model,
+                "prompt", text   // Ollama expects "prompt"
             );
 
             HttpHeaders headers = new HttpHeaders();
@@ -26,14 +24,11 @@ public class EmbeddingService {
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
-            // Call Ollama
-            Map<String, Object> response = restTemplate.postForObject(ollamaUrl, entity, Map.class);
+            Map<String, Object> response =
+                restTemplate.postForObject(ollamaEmbeddingUrl, entity, Map.class);
 
-            // Extract embedding from response
-            var list = (java.util.List<Map<String, Object>>) response.get("data");
-            var embeddingList = (java.util.List<Double>) list.get(0).get("embedding");
+            var embeddingList = (java.util.List<Double>) response.get("embedding");
 
-            // Convert Double[] to float[]
             float[] embedding = new float[embeddingList.size()];
             for (int i = 0; i < embeddingList.size(); i++) {
                 embedding[i] = embeddingList.get(i).floatValue();

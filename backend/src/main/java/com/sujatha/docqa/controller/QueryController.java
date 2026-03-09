@@ -14,7 +14,7 @@ public class QueryController {
     private QueryService queryService;
 
     /**
-     * Endpoint to ask a question and get top N relevant chunks.
+     * Existing endpoint: returns top N relevant chunks only
      * Example POST JSON: {"question":"What is AI?", "topN":3}
      */
     @PostMapping
@@ -22,26 +22,24 @@ public class QueryController {
         return queryService.getRelevantChunks(request.getQuestion(), request.getTopN());
     }
 
-    // Simple request body class
+    /**
+     * ✅ New endpoint: returns full LLM answer using Ollama
+     * Example POST JSON: {"question":"What is AI?", "topN":3}
+     */
+    @PostMapping("/answer")
+    public String getAnswer(@RequestBody QueryRequest request) {
+        return queryService.answerQuestion(request.getQuestion(), request.getTopN());
+    }
+
+    // Request body class stays the same
     public static class QueryRequest {
         private String question;
         private int topN;
 
-        // Getters and setters
-        public String getQuestion() {
-            return question;
-        }
+        public String getQuestion() { return question; }
+        public void setQuestion(String question) { this.question = question; }
 
-        public void setQuestion(String question) {
-            this.question = question;
-        }
-
-        public int getTopN() {
-            return topN;
-        }
-
-        public void setTopN(int topN) {
-            this.topN = topN;
-        }
+        public int getTopN() { return topN; }
+        public void setTopN(int topN) { this.topN = topN; }
     }
 }

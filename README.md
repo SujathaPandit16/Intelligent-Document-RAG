@@ -19,3 +19,16 @@ This project demonstrates an end-to-end **Retrieval-Augmented Generation (RAG)**
 - **Ollama (Gemma 2B model)**
 - **Vector storage service** (custom implementation)
 - **Postman** for API testing
+
+- 
+## ⚙️ Setup
+### Prerequisites
+- Java 17+
+- Maven
+- Ollama installed locally
+- Gemma model pulled:  
+  ```bash
+  ollama pull gemma:2b
+
+  Run the app
+  mvn spring-boot:run
